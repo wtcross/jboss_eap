@@ -110,6 +110,33 @@
 
 #### Download and install base library and patch
 
+- name: Async Download JBoss EAP Patch by URL (HTTP/HTTPS/FTP)
+  get_url:
+    url: "{{ jboss_eap_patch_artifact_url }}"
+    dest: "{{ jboss_eap_patch_dest }}"
+    username: "{{ url_username }}"
+    password: "{{ url_password }}"
+  async: 7200
+  poll: 0
+  register: jboss_eap_patch_download
+  tags:
+    - jboss_eap
+  when: transfer_method == 'url' and jboss_eap_apply_patch == true and (jboss_eap_exists.stat.exists == false or 'base' in patch_info_result.stdout)
+
+- name: Async Download JBoss EAP by URL (HTTP/HTTPS/FTP)
+  redhat_csp_download:
+    url: "{{ jboss_eap_artifact_url }}"
+    dest: "{{ jboss_eap_artifact_dl_dest }}"
+    username: "{{ url_username }}"
+    password: "{{ url_password }}"
+  async: 7200
+  poll: 0
+  register: jboss_eap_download
+  tags:
+    - jboss_eap
+  when: transfer_method == 'url' and jboss_eap_exists.stat.exists == false
+
+
 - name: Async Download JBoss EAP Patch from Red Hat Customer Portal
   redhat_csp_download:
     url: "{{ jboss_eap_patch_artifact_url }}"
@@ -144,7 +171,7 @@
   delay: 10
   tags:
     - jboss_eap
-  when: transfer_method == 'csp-to-host' and jboss_eap_exists.stat.exists == false
+  when: transfer_method in ['csp-to-host', 'url'] and jboss_eap_exists.stat.exists == false
 
 - name: 'Check On JBoss EAP Patch Download Completion'
   async_status: jid={{ jboss_eap_patch_download.ansible_job_id }}
@@ -154,7 +181,7 @@
   delay: 10
   tags:
     - jboss_eap
-  when: transfer_method == 'csp-to-host' and jboss_eap_apply_patch == true and (jboss_eap_exists.stat.exists == false or 'base' in patch_info_result.stdout)
+  when: transfer_method in ['csp-to-host', 'url'] and jboss_eap_apply_patch == true and (jboss_eap_exists.stat.exists == false or 'base' in patch_info_result.stdout)
 
 - name: Copy JBoss EAP
   copy:
